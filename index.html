@@ -18,7 +18,7 @@
     --bg:#14120e; --surface:#1c1914; --surface-2:#25211a; --line:#342e24;
     --text:#f4efe4; --muted:#a89f8b; --faint:#716a5b;
     --gold:#d6aa4f; --gold-ink:#1a1408;
-    --moving:#3cc982; --stopped:#5aa0f2; --offline:#7d7667; --danger:#ef6b5b;
+    --moving:#3cc982; --stopped:#5aa0f2; --place:#a77be0; --offline:#7d7667; --danger:#ef6b5b;
     --radius:14px;
   }
   *{box-sizing:border-box}
@@ -185,6 +185,25 @@
   .gate{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:var(--bg);z-index:4000;text-align:center}
   .gate .login-card{text-align:left}
 
+  /* customer locations & jobs */
+  .loc-pin{width:14px;height:14px;margin:-7px 0 0 -7px;transform:rotate(45deg);border-radius:3px;background:#fff;
+    border:3px solid var(--place);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+  .job-pin{width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:7px;background:var(--place);color:#fff;border:2px solid #fff;
+    font:700 11px/20px system-ui,sans-serif;text-align:center;box-shadow:0 1px 5px rgba(0,0,0,.35)}
+  .job-pin.done{background:var(--moving)}
+  .jobs{list-style:none;margin:0;padding:0}
+  .jobs li{display:flex;gap:12px;padding:10px 4px;border-top:1px solid var(--line);cursor:pointer;border-radius:8px}
+  .jobs li:hover{background:var(--surface)}
+  .jobnum{width:24px;height:24px;flex:none;border-radius:7px;background:var(--place);color:#fff;font-weight:700;
+    font-size:12px;display:grid;place-items:center;margin-top:1px}
+  .jobnum.done{background:var(--moving);color:#05301b}
+  .jobs .t{font-weight:500;font-size:14px}
+  .jobs .a{font-size:13px;color:var(--muted)}
+  .chip{display:inline-block;font-size:12px;font-weight:500;padding:0 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .chip.ok{color:var(--moving);border-color:rgba(60,201,130,.45)}
+  .chip.here{color:var(--stopped);border-color:rgba(90,160,242,.45)}
+  .round-head{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);margin:4px 0 6px}
+
   /* ---------- Mobile ---------- */
   @media (max-width:899px){
     #app{grid-template-columns:1fr;grid-template-areas:"top" "map"}
@@ -213,7 +232,7 @@
       <div><div class="brand-name">Thaipipat Fleet</div><div class="brand-sub">ระบบติดตามรถขนส่ง</div></div>
     </div>
     <h1>เข้าสู่ระบบ</h1>
-    <p class="lead">ใช้อีเมลและรหัสผ่านที่ได้รับจากผู้ดูแลระบบ</p>
+    <p class="lead">ใช้อีเมลและรหัสผ่านเดียวกับระบบ Thaipipat App</p>
     <label class="field"><span>อีเมล</span><input class="input" type="email" id="email" autocomplete="username" required></label>
     <label class="field"><span>รหัสผ่าน</span><input class="input" type="password" id="password" autocomplete="current-password" required></label>
     <div class="form-error" id="loginError" role="alert"></div>
@@ -225,7 +244,7 @@
 <div class="gate" id="notAllowed" hidden>
   <div class="login-card">
     <h1 style="margin-top:0">ยังไม่ได้รับสิทธิ์</h1>
-    <p class="lead">บัญชี <b id="naEmail"></b> ยังไม่อยู่ในรายชื่อพนักงานที่ดูข้อมูลรถได้ กรุณาติดต่อผู้ดูแลระบบ</p>
+    <p class="lead">บัญชี <b id="naEmail"></b> ยังไม่ได้เปิดใช้งานในระบบ Thaipipat App กรุณาติดต่อผู้ดูแลระบบ</p>
     <button class="btn btn-block" data-logout>ออกจากระบบ</button>
   </div>
 </div>
@@ -266,12 +285,7 @@
         <button class="back" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>รถทั้งหมด</button>
       </div>
       <div class="scroll"><div class="dbody">
-        <div class="dname-row"><h2 id="dName"></h2><button class="link-btn" id="renameBtn">แก้ชื่อ</button></div>
-        <form class="rename" id="renameForm" hidden>
-          <input class="input" id="renameInput" maxlength="60" placeholder="ชื่อเรียกรถ เช่น 6 ล้อ คันใหม่">
-          <button class="btn btn-primary" type="submit">บันทึก</button>
-          <button class="btn" type="button" id="renameCancel">ยกเลิก</button>
-        </form>
+        <div class="dname-row"><h2 id="dName"></h2></div>
         <div class="dplate" id="dPlate"></div>
         <div class="pill" id="dStatus"><i class="dot"></i><span></span></div>
         <div class="metrics">
@@ -295,9 +309,12 @@
         <div class="daystats">
           <div class="metric"><span>ระยะทาง</span><b class="tnum" id="sDist">–</b></div>
           <div class="metric"><span>เวลาวิ่ง</span><b class="tnum" id="sDrive">–</b></div>
-          <div class="metric"><span>เร็วสุด กม./ชม.</span><b class="tnum" id="sMax">–</b></div>
+          <div class="metric"><span title="กม./ชม.">เร็วสุด</span><b class="tnum" id="sMax">–</b></div>
           <div class="metric"><span>จุดจอด</span><b class="tnum" id="sStops">–</b></div>
         </div>
+        <div class="section-title">งานส่งของ</div>
+        <div id="jobsBox"></div>
+        <div class="section-title">จุดจอด</div>
         <ol class="stops" id="stopList"></ol>
         <div class="note" id="dayNote"></div>
       </div></div>
@@ -313,8 +330,8 @@
 /* =========================================================
    ตั้งค่า (publishable key เปิดเผยได้ ข้อมูลถูกป้องกันด้วย RLS)
    ========================================================= */
-const SUPABASE_URL = 'https://aewvhroomgrtuewtpwtb.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_JfKVxu4Qa4a969LrhdZeTw_B-plJRfb';
+const SUPABASE_URL = 'https://tnybcrpoffrskkqgsyop.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_8W1EJ2dz9-m5-qefIIrg8w_QtCs5cgf';
 
 const MOVING_SPEED = 5;              // กม./ชม. ขึ้นไป = กำลังวิ่ง
 const MOVING_MAX_AGE = 15 * 60e3;    // สัญญาณเก่ากว่านี้ไม่นับว่ากำลังวิ่ง
@@ -323,6 +340,7 @@ const STOP_MIN = 5 * 60e3;           // จอดนานเกิน 5 นา�
 const STOP_RADIUS = 150;             // เมตร
 const HISTORY_DAYS = 90;
 const TZ = 'Asia/Bangkok';
+const NEAR_PLACE = 150;              // เมตร: จุดจอดที่อยู่ใกล้จุดส่งในระบบ
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true },
@@ -391,6 +409,10 @@ const state = {
   fitted: false,
   channel: null,
   pollTimer: null,
+  fleet: new Map(),      // gps_id -> แถวจากตาราง vehicles ของระบบ
+  places: [],            // จุดส่งของ (locations) ที่มีพิกัด
+  rounds: new Map(),     // 'YYYY-MM-DD' -> รอบส่งของวันนั้น
+  showPlaces: true,
 };
 
 function status(v) {
@@ -400,7 +422,18 @@ function status(v) {
   return 'stopped';
 }
 const STATUS_TEXT = { moving: 'กำลังวิ่ง', stopped: 'จอดอยู่', offline: 'ไม่มีสัญญาณเกิน 24 ชม.' };
-const nameOf = (v) => (v.display_name && v.display_name.trim()) || v.plate;
+const fleetOf = (v) => state.fleet.get(v.plate);
+const nameOf = (v) => { const f = fleetOf(v); return f ? [f.type, f.plate].filter(Boolean).join(' ') : v.plate; };
+const placeName = (l) => {
+  const c = l.customers?.name || '';
+  return c && l.name ? `${c} · ${l.name}` : (c || l.name || 'จุดส่ง');
+};
+const jobDone = (j) => j.status === 'ส่งแล้ว' || !!j.gps_arrived_at;
+function jobsFor(v, day) {
+  const f = fleetOf(v); if (!f) return null;
+  const rs = (state.rounds.get(day) || []).filter((r) => r.vehicle_id === f.id);
+  return rs;
+}
 
 /* =========================================================
    AUTH
@@ -436,16 +469,17 @@ document.querySelectorAll('[data-logout]').forEach((b) => b.addEventListener('cl
 async function enterApp(session) {
   const email = session.user?.email ?? '';
   // ตรวจสิทธิ์พนักงาน (ถ้ายังไม่มีฟังก์ชัน is_staff ในฐานข้อมูลก็ข้ามไป)
-  const { data: allowed, error } = await sb.rpc('is_staff');
+  const { data: allowed, error } = await sb.rpc('gps_can_view');
   if (!error && allowed === false) {
     $('naEmail').textContent = email; $('login').hidden = true; $('notAllowed').hidden = false; return;
   }
   $('login').hidden = true; $('notAllowed').hidden = true; $('app').hidden = false;
   $('userEmail').textContent = email;
   initMap();
+  await Promise.all([loadFleet(), loadPlaces(), loadRounds(today())]);
   await loadVehicles();
   subscribe();
-  state.pollTimer = setInterval(() => { loadVehicles(); }, 60e3);
+  state.pollTimer = setInterval(() => { loadVehicles(); loadRounds(today()); }, 60e3);
 }
 function teardown() {
   if (state.channel) { sb.removeChannel(state.channel); state.channel = null; }
@@ -453,13 +487,14 @@ function teardown() {
   state.vehicles.clear();
   state.markers.forEach((m) => m.remove()); state.markers.clear();
   clearRoute(); state.selected = null; state.fitted = false;
+  state.fleet.clear(); state.places = []; state.rounds.clear(); placeLayer?.clearLayers();
   showList();
 }
 
 /* =========================================================
    MAP
    ========================================================= */
-let map, routeLayer, baseStreet, baseSat;
+let map, routeLayer, placeLayer, baseStreet, baseSat;
 function initMap() {
   if (map) { setTimeout(() => map.invalidateSize(), 50); return; }
   map = L.map('map', { zoomControl: false, attributionControl: true }).setView([13.75, 100.6], 9);
@@ -471,6 +506,7 @@ function initMap() {
     maxZoom: 19, attribution: 'Imagery &copy; Esri',
   });
   L.control.zoom({ position: 'topright' }).addTo(map);
+  placeLayer = L.layerGroup().addTo(map);
   routeLayer = L.layerGroup().addTo(map);
 
   const Tools = L.Control.extend({
@@ -479,11 +515,16 @@ function initMap() {
       const div = L.DomUtil.create('div', 'map-tools');
       div.innerHTML = `
         <button type="button" data-t="fit" title="ดูรถทั้งหมด" aria-label="ดูรถทั้งหมด"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/></svg></button>
+        <button type="button" data-t="places" class="on" title="แสดง/ซ่อนจุดส่งของ" aria-label="แสดง/ซ่อนจุดส่งของ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
         <button type="button" data-t="sat" title="ภาพดาวเทียม" aria-label="ภาพดาวเทียม"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/></svg></button>`;
       L.DomEvent.disableClickPropagation(div);
       div.addEventListener('click', (e) => {
         const b = e.target.closest('button'); if (!b) return;
         if (b.dataset.t === 'fit') fitAll(true);
+        if (b.dataset.t === 'places') {
+          state.showPlaces = !state.showPlaces; b.classList.toggle('on', state.showPlaces);
+          if (state.showPlaces) placeLayer.addTo(map); else map.removeLayer(placeLayer);
+        }
         if (b.dataset.t === 'sat') {
           const on = map.hasLayer(baseSat);
           if (on) { map.removeLayer(baseSat); baseStreet.addTo(map); } else { map.removeLayer(baseStreet); baseSat.addTo(map); }
@@ -539,14 +580,57 @@ function renderMarker(v) {
    DATA
    ========================================================= */
 function normalize(row) {
-  return { ...row, _t: row.gps_time ? new Date(row.gps_time).getTime() : null };
+  return { ...row, plate: row.gps_id, _t: row.gps_time ? new Date(row.gps_time).getTime() : null };
+}
+async function loadFleet() {
+  const { data, error } = await sb.from('vehicles').select('id,plate,type,gps_id,active');
+  if (error) { console.error(error); return; }
+  state.fleet.clear();
+  for (const f of data) if (f.gps_id && f.gps_id.trim()) state.fleet.set(f.gps_id.trim(), f);
+}
+async function loadPlaces() {
+  const { data, error } = await sb.from('locations')
+    .select('id,name,lat,lng,active,customers(name)').not('lat', 'is', null).not('lng', 'is', null);
+  if (error) { console.error(error); return; }
+  state.places = data.map((l) => ({ ...l, lon: l.lng }));
+  placeLayer.clearLayers();
+  for (const l of state.places) {
+    if (l.active === false) continue;
+    L.marker([l.lat, l.lon], { icon: L.divIcon({ className: '', html: '<div class="loc-pin"></div>', iconSize: [0, 0] }), keyboard: false })
+      .bindTooltip(esc(placeName(l)), { direction: 'top', offset: [0, -6] })
+      .addTo(placeLayer);
+  }
+}
+function nearestPlace(lat, lon, maxM = NEAR_PLACE) {
+  let best = null, bestD = Infinity;
+  for (const l of state.places) {
+    const d = haversine({ lat, lon }, l);
+    if (d < bestD) { bestD = d; best = l; }
+  }
+  return bestD <= maxM ? best : null;
+}
+async function loadRounds(day) {
+  const { data, error } = await sb.from('rounds')
+    .select('id,code,round_date,status,vehicle_id,drivers(name),jobs(id,code,seq,status,task_type,gps_arrived_at,gps_departed_at,actual_at,locations(id,name,lat,lng),customers(name))')
+    .eq('round_date', day).neq('status', 'Cancelled').order('code');
+  if (error) {
+    // ถ้ายังไม่ได้รัน SQL เพิ่มคอลัมน์ gps_arrived_at ให้ลองดึงแบบไม่มีคอลัมน์นั้น
+    const r2 = await sb.from('rounds')
+      .select('id,code,round_date,status,vehicle_id,drivers(name),jobs(id,code,seq,status,task_type,actual_at,locations(id,name,lat,lng),customers(name))')
+      .eq('round_date', day).neq('status', 'Cancelled').order('code');
+    if (r2.error) { console.error(r2.error); return; }
+    state.rounds.set(day, r2.data);
+  } else state.rounds.set(day, data);
+  for (const r of state.rounds.get(day)) (r.jobs || []).sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
+  if (day === today()) scheduleListRender();
+  if (state.selected && state.day === day) renderJobs();
 }
 async function loadVehicles() {
-  const { data, error } = await sb.from('vehicles')
-    .select('plate,display_name,lat,lon,speed,heading,fuel,gps_time,updated_at');
+  const { data, error } = await sb.from('gps_latest')
+    .select('gps_id,lat,lon,speed,heading,fuel,gps_time,updated_at');
   if (error) { console.error(error); if (!state.vehicles.size) $('list').innerHTML = '<div class="empty">โหลดข้อมูลไม่สำเร็จ ลองรีเฟรชหน้าอีกครั้ง</div>'; return; }
   const seen = new Set();
-  for (const row of data) { seen.add(row.plate); state.vehicles.set(row.plate, normalize(row)); }
+  for (const row of data) { const v = normalize(row); seen.add(v.plate); state.vehicles.set(v.plate, v); }
   for (const p of [...state.vehicles.keys()]) if (!seen.has(p)) { state.vehicles.delete(p); state.markers.get(p)?.remove(); state.markers.delete(p); }
   state.vehicles.forEach(renderMarker);
   renderList();
@@ -557,7 +641,7 @@ function subscribe() {
   if (state.channel) return;
   setLive(false);
   state.channel = sb.channel('vehicles-live')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'vehicles' }, (payload) => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'gps_latest' }, (payload) => {
       if (payload.eventType === 'DELETE') return loadVehicles();
       const v = normalize(payload.new);
       const prev = state.vehicles.get(v.plate);
@@ -585,9 +669,12 @@ const ORDER = { moving: 0, stopped: 1, offline: 2 };
 function cardHtml(v) {
   const st = status(v);
   const fuel = v.fuel != null ? Math.max(0, Math.min(100, Math.round(v.fuel))) : null;
-  const sub = st === 'moving'
+  let sub = st === 'moving'
     ? `${Math.round(v.speed)} กม./ชม. · ${seenText(v)}`
     : `${st === 'offline' ? 'ไม่มีสัญญาณ' : 'จอดอยู่'} · ${seenText(v)}`;
+  const rs = jobsFor(v, today());
+  const jobs = rs ? rs.flatMap((r) => r.jobs || []) : [];
+  if (jobs.length) sub += ` · งาน ${jobs.filter(jobDone).length}/${jobs.length}`;
   return `<button class="vcard${state.selected === v.plate ? ' active' : ''}" data-plate="${esc(v.plate)}">
     <span class="dot ${st}"></span>
     <span class="vmain"><span class="vname">${esc(nameOf(v))}</span>
@@ -648,7 +735,6 @@ function select(plate) {
   renderMarker(v);
   $('listView').hidden = true; $('detailView').hidden = false;
   $('detailView').querySelector('.scroll').scrollTop = 0;
-  $('renameForm').hidden = true;
   if (isMobile()) $('app').classList.remove('sheet-full');
   state.day = ymd(new Date());
   lastAddrFor = null;
@@ -670,7 +756,7 @@ function renderDetail(tickOnly) {
   const v = state.vehicles.get(state.selected); if (!v) return showList();
   const st = status(v);
   $('dName').textContent = nameOf(v);
-  $('dPlate').textContent = v.display_name ? `ทะเบียน / รหัสอุปกรณ์: ${v.plate}` : 'ตั้งชื่อเรียกให้จำง่ายได้ด้วยปุ่ม "แก้ชื่อ"';
+  $('dPlate').textContent = fleetOf(v) ? `GPS: ${v.plate}` : `GPS: ${v.plate} · ยังไม่ได้ผูกกับรถในระบบ`;
   const pill = $('dStatus'); pill.querySelector('.dot').className = `dot ${st}`;
   pill.querySelector('span').textContent = st === 'stopped' ? `จอดอยู่` : STATUS_TEXT[st];
   $('dSpeed').innerHTML = v.speed == null ? '–' : `${Math.round(v.speed)} <small>กม./ชม.</small>`;
@@ -686,22 +772,6 @@ function renderDetail(tickOnly) {
 }
 $('zoomBtn').addEventListener('click', () => {
   const v = state.vehicles.get(state.selected); if (v?.lat != null) map.setView([v.lat, v.lon], 16);
-});
-
-/* rename */
-$('renameBtn').addEventListener('click', () => {
-  const v = state.vehicles.get(state.selected);
-  $('renameInput').value = v?.display_name ?? '';
-  $('renameForm').hidden = false; $('renameInput').focus();
-});
-$('renameCancel').addEventListener('click', () => { $('renameForm').hidden = true; });
-$('renameForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const plate = state.selected; const name = $('renameInput').value.trim() || null;
-  const { error } = await sb.from('vehicles').update({ display_name: name }).eq('plate', plate);
-  if (error) { toast('บันทึกชื่อไม่สำเร็จ'); console.error(error); return; }
-  const v = state.vehicles.get(plate); v.display_name = name;
-  $('renameForm').hidden = true; renderDetail(); renderMarker(v); renderList(); toast('บันทึกชื่อแล้ว');
 });
 
 /* address lookup (OpenStreetMap Nominatim, จำกัด 1 ครั้ง/วินาที) */
@@ -727,6 +797,8 @@ async function loadAddress(v, el) {
   if (v.lat == null) { el.textContent = '–'; return; }
   el.className = 'muted'; el.textContent = 'กำลังหาที่อยู่…';
   const plate = v.plate;
+  const near = nearestPlace(v.lat, v.lon);
+  if (near) { el.className = ''; el.textContent = `ที่ ${placeName(near)}`; return; }
   const a = await reverseGeocode(v.lat, v.lon);
   if (state.selected !== plate) return;
   el.className = a ? '' : 'muted';
@@ -741,7 +813,7 @@ $('dayInput').addEventListener('change', (e) => { if (e.target.value) { state.da
 $('prevDay').addEventListener('click', () => { state.day = addDays(state.day, -1); loadRoute(); });
 $('nextDay').addEventListener('click', () => { state.day = addDays(state.day, 1); loadRoute(); });
 
-function clearRoute() { routeLayer?.clearLayers(); state.route = []; }
+function clearRoute() { routeLayer?.clearLayers(); jobLayer?.clearLayers(); state.route = []; }
 
 let routeReq = 0;
 async function loadRoute() {
@@ -754,14 +826,16 @@ async function loadRoute() {
 
   const req = ++routeReq;
   clearRoute();
+  $('jobsBox').innerHTML = '';
+  if (!state.rounds.has(state.day)) loadRounds(state.day); else renderJobs();
   $('stopList').innerHTML = ''; $('dayNote').textContent = 'กำลังโหลดเส้นทาง…';
   ['sDist', 'sDrive', 'sMax', 'sStops'].forEach((id) => ($(id).textContent = '–'));
 
   const start = dayStart(state.day), end = new Date(start.getTime() + 86400e3);
   const pts = [];
   for (let from = 0; ; from += 1000) {
-    const { data, error } = await sb.from('positions').select('lat,lon,speed,gps_time')
-      .eq('plate', plate).gte('gps_time', start.toISOString()).lt('gps_time', end.toISOString())
+    const { data, error } = await sb.from('gps_positions').select('lat,lon,speed,gps_time')
+      .eq('gps_id', plate).gte('gps_time', start.toISOString()).lt('gps_time', end.toISOString())
       .order('gps_time').range(from, from + 999);
     if (error) { console.error(error); $('dayNote').textContent = 'โหลดเส้นทางไม่สำเร็จ'; return; }
     for (const r of data) pts.push({ lat: r.lat, lon: r.lon, speed: r.speed ?? 0, t: new Date(r.gps_time).getTime() });
@@ -844,6 +918,12 @@ function drawRoute(fit) {
   });
   $('stopList').innerHTML = items.join('');
   stops.forEach((s, idx) => {
+    const near = nearestPlace(s.lat, s.lon);
+    if (near) {
+      const el = $('stopList').querySelector(`li[data-i="${idx}"] [data-addr]`);
+      if (el) { el.textContent = placeName(near); el.style.color = 'var(--text)'; }
+      return;
+    }
     reverseGeocode(s.lat, s.lon).then((a) => {
       const el = $('stopList').querySelector(`li[data-i="${idx}"] [data-addr]`);
       if (el) el.textContent = a || `${s.lat.toFixed(5)}, ${s.lon.toFixed(5)}`;
@@ -854,6 +934,53 @@ function drawRoute(fit) {
     const s = stops[+li.dataset.i]; map.setView([s.lat, s.lon], 17);
   };
   if (fit && latlngs.length > 1) map.fitBounds(latlngs, { ...mapPadding(), maxZoom: 16 });
+  renderJobs();
+}
+
+/* =========================================================
+   JOBS (รอบส่งจากระบบ Thaipipat App)
+   ========================================================= */
+let jobLayer;
+function renderJobs() {
+  const box = $('jobsBox'); if (!box) return;
+  if (!jobLayer) jobLayer = L.layerGroup().addTo(map);
+  jobLayer.clearLayers();
+  const v = state.vehicles.get(state.selected); if (!v) return;
+  if (!fleetOf(v)) { box.innerHTML = '<div class="note" style="margin-top:0">รถคันนี้ยังไม่ได้ผูกกับรถในระบบ (ใส่ค่า GPS ในช่อง gps_id ของรถ)</div>'; return; }
+  if (!state.rounds.has(state.day)) { box.innerHTML = '<div class="note" style="margin-top:0">กำลังโหลดงาน…</div>'; return; }
+  const rs = jobsFor(v, state.day);
+  if (!rs.length) { box.innerHTML = '<div class="note" style="margin-top:0">ไม่มีรอบส่งของรถคันนี้ในวันที่เลือก</div>'; return; }
+  const all = [];
+  box.innerHTML = rs.map((r) => {
+    const jobs = r.jobs || [];
+    const done = jobs.filter(jobDone).length;
+    const head = `<div class="round-head"><span>รอบ ${esc(r.code || r.id)}${r.drivers?.name ? ' · ' + esc(r.drivers.name) : ''}</span><span class="tnum">${done}/${jobs.length} จุด</span></div>`;
+    const items = jobs.map((j) => {
+      all.push(j);
+      const loc = j.locations;
+      const title = loc ? placeName({ ...loc, customers: j.customers }) : (j.customers?.name || 'ไม่ระบุจุดส่ง');
+      let chip;
+      if (j.status === 'ส่งแล้ว') chip = '<span class="chip ok">ส่งแล้ว</span>';
+      else if (j.gps_departed_at) chip = `<span class="chip ok">ถึงแล้ว ${fmtTime.format(new Date(j.gps_arrived_at))}–${fmtTime.format(new Date(j.gps_departed_at))}</span>`;
+      else if (j.gps_arrived_at) chip = `<span class="chip here">อยู่ที่จุดส่ง ตั้งแต่ ${fmtTime.format(new Date(j.gps_arrived_at))}</span>`;
+      else chip = '<span class="chip">ยังไม่ถึง</span>';
+      return `<li data-job="${j.id}"><span class="jobnum${jobDone(j) ? ' done' : ''}">${j.seq || '•'}</span><div>
+        <div class="t">${esc(title)}</div>
+        <div class="a">${esc(j.task_type || '')}${j.code ? ' · ' + esc(j.code) : ''} ${chip}</div></div></li>`;
+    }).join('');
+    return head + `<ol class="jobs">${items}</ol>`;
+  }).join('');
+  for (const j of all) {
+    const l = j.locations; if (!l || l.lat == null) continue;
+    L.marker([l.lat, l.lng], { icon: L.divIcon({ className: '', html: `<div class="job-pin${jobDone(j) ? ' done' : ''}">${j.seq || '•'}</div>`, iconSize: [0, 0] }), zIndexOffset: 800 })
+      .bindTooltip(esc(placeName({ ...l, customers: j.customers })), { direction: 'top', offset: [0, -10] })
+      .addTo(jobLayer);
+  }
+  box.onclick = (e) => {
+    const li = e.target.closest('li[data-job]'); if (!li) return;
+    const j = all.find((x) => String(x.id) === li.dataset.job);
+    if (j?.locations?.lat != null) map.setView([j.locations.lat, j.locations.lng], 17);
+  };
 }
 
 boot();
